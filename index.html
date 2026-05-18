@@ -364,12 +364,11 @@ function capture(){
 }
 async function analyze(){
   const b64=cap.split(',')[1];
-  const prompt=`Tu es experte en dermatologie esthétique. Analyse ce visage et retourne UNIQUEMENT un JSON valide sans markdown:\n{"profil":{"typePeau":"string","teint":"string","carnation":"string","particularites":["string","string"]},"analyse":"string","produits":[{"categorie":"string","nom":"string","marque":"string","raison":"string","prix":"string","score":number}],"routine":{"matin":["string","string","string"],"soir":["string","string","string"]},"conseil":"string"}\n6 produits variés. JSON uniquement.`;
   try{
-    const res=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${KEY}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{inline_data:{mime_type:'image/jpeg',data:b64}},{text:prompt}]}],generationConfig:{temperature:0.7,maxOutputTokens:1500}})});
+    const res=await fetch('/.netlify/functions/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:b64})});
     const data=await res.json();
-    if(data.error)throw new Error(data.error.message);
-    const r=JSON.parse(data.candidates[0].content.parts[0].text.replace(/```json|```/g,'').trim());
+    if(!res.ok)throw new Error(data.error||'Erreur serveur');
+    const r=JSON.parse(data.result.replace(/```json|```/g,'').trim());
     showR(r)
   }catch(e){alert('Erreur : '+e.message);showP('camera');startCam()}
 }
