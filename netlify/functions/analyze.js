@@ -17,7 +17,7 @@ exports.handler = async (event) => {
     const prompt = `Tu es experte en dermatologie esthétique. Analyse ce visage et retourne UNIQUEMENT un JSON valide sans markdown:\n{"profil":{"typePeau":"string","teint":"string","carnation":"string","particularites":["string","string"]},"analyse":"string","produits":[{"categorie":"string","nom":"string","marque":"string","raison":"string","prix":"string","score":0}],"routine":{"matin":["string","string","string"],"soir":["string","string","string"]},"conseil":"string"}\n6 produits variés. JSON uniquement.`;
 
     const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${key}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
