@@ -1,54 +1,17 @@
 exports.handler = async (event) => {
   if (event.httpMethod === "OPTIONS") {
-    return {
-      statusCode: 200,
-      headers: {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"Content-Type"},
-      body: ""
-    };
+    return { statusCode: 200, headers: {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"Content-Type"}, body: "" };
   }
-
   try {
     const { image } = JSON.parse(event.body);
-    const key = process.env.OPENAI_KEY;
-
-    const prompt = `Tu es experte en dermatologie esthétique. Analyse ce visage et retourne UNIQUEMENT un JSON valide sans markdown:\n{"profil":{"typePeau":"string","teint":"string","carnation":"string","particularites":["string","string"]},"analyse":"string","produits":[{"categorie":"string","nom":"string","marque":"string","raison":"string","prix":"string","score":0}],"routine":{"matin":["string","string","string"],"soir":["string","string","string"]},"conseil":"string"}\n6 produits variés. JSON uniquement.`;
-
-    const res = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${key}`
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        max_tokens: 3000,
-        messages: [{
-          role: "user",
-          content: [
-            { type: "image_url", image_url: { url: `data:image/jpeg;base64,${image}` } },
-            { type: "text", text: prompt }
-          ]
-        }]
-      })
-    });
-
+    const key = process.env.GEMINI_KEY;
+    const prompt = `Tu es experte en dermatologie. Retourne UNIQUEMENT ce JSON sans markdown: {"profil":{"typePeau":"string","teint":"string","carnation":"string","particularites":["string"]},"analyse":"string","produits":[{"categorie":"string","nom":"string","marque":"string","raison":"string","prix":"string","score":0}],"routine":{"matin":["string"],"soir":["string"]},"conseil":"string"}`;
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({contents:[{parts:[{inline_data:{mime_type:"image/jpeg",data:image}},{text:prompt}]}],generationConfig:{temperature:0.7,maxOutputTokens:3000}})});
     const data = await res.json();
-
     if (data.error) throw new Error(data.error.message);
-
-    const result = data.choices[0].message.content;
-
-    return {
-      statusCode: 200,
-      headers: {"Access-Control-Allow-Origin":"*","Content-Type":"application/json"},
-      body: JSON.stringify({ result })
-    };
-
+    const result = data.candidates[0].content.parts[0].text;
+    return { statusCode: 200, headers: {"Access-Control-Allow-Origin":"*","Content-Type":"application/json"}, body: JSON.stringify({ result }) };
   } catch(e) {
-    return {
-      statusCode: 500,
-      headers: {"Access-Control-Allow-Origin":"*"},
-      body: JSON.stringify({ error: e.message })
-    };
+    return { statusCode: 500, headers: {"Access-Control-Allow-Origin":"*"}, body: JSON.stringify({ error: e.message }) };
   }
 };
