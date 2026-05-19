@@ -170,6 +170,9 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:36px 60px
 .p-score{font-size:10px;letter-spacing:0.06em;color:var(--text4)}
 .p-btn{width:100%;background:transparent;border:1px solid var(--border2);border-radius:20px;padding:7px;font-size:10px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);cursor:pointer;font-family:"DM Sans",sans-serif;transition:all 0.2s}
 .p-btn:hover{border-color:var(--salmon-mid);color:var(--salmon-mid);background:white}
+.p-links{display:flex;gap:6px;margin-top:6px}
+.p-btn-amazon:hover{border-color:#f90!important;color:#f90!important;background:white}
+.p-btn-sephora:hover{border-color:#000!important;color:#000!important;background:white}
 
 .r-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .r-card{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:18px}
@@ -372,11 +375,12 @@ async function analyze(){
     showR(r)
   }catch(e){alert('Erreur : '+e.message);showP('camera');startCam()}
 }
+function affLiens(nom,marque){var q=encodeURIComponent(nom+' '+marque);var sUrl=encodeURIComponent('https://www.sephora.fr/search/?q='+q);return{amazon:'https://www.amazon.fr/s?k='+q+'&tag=npcp020705200-21',sephora:'https://www.awin1.com/cread.php?awinmid=13154&awinpid=2901773&ued='+sUrl};}
 function showR(r){
   document.getElementById('r-tags').innerHTML=[r.profil.typePeau,r.profil.teint,r.profil.carnation,...(r.profil.particularites||[])].map(t=>`<span class="r-tag">${t}</span>`).join('');
   document.getElementById('r-analyse').textContent=r.analyse;
   document.getElementById('r-conseil').innerHTML='✦ '+r.conseil;
-  document.getElementById('t-p').innerHTML=r.produits.map(p=>`<div class="p-card"><div class="p-cat">${p.categorie}</div><div class="p-nom">${p.nom}</div><div class="p-marque">${p.marque}</div><p class="p-raison">${p.raison}</p><div class="p-foot"><span class="p-prix">${p.prix}</span><span class="p-score">${p.score}% match</span></div><button class="p-btn" onclick="window.open('https://www.sephora.fr/search/?q='+encodeURIComponent('${p.nom} ${p.marque}'),'_blank')">Trouver ce produit →</button></div>`).join('');
+  document.getElementById('t-p').innerHTML=r.produits.map(p=>`<div class="p-card"><div class="p-cat">${p.categorie}</div><div class="p-nom">${p.nom}</div><div class="p-marque">${p.marque}</div><p class="p-raison">${p.raison}</p><div class="p-foot"><span class="p-prix">${p.prix}</span><span class="p-score">${p.score}% match</span></div>`+function(){var l=affLiens(p.nom,p.marque);return '<div class="p-links"><button class="p-btn p-btn-amazon" onclick="window.open(\''+l.amazon+'\',\'_blank\')">Amazon →</button><button class="p-btn p-btn-sephora" onclick="window.open(\''+l.sephora+'\',\'_blank\')">Sephora →</button></div>';}()+`</div>`).join('');
   document.getElementById('t-r').innerHTML=[{l:'☀ Matin',s:r.routine.matin},{l:'◑ Soir',s:r.routine.soir}].map(({l,s})=>`<div class="r-card"><div class="r-t">${l}</div>${s.map((x,i)=>`<div class="r-step"><div class="r-n">${i+1}</div><span>${x}</span></div>`).join('')}</div>`).join('');
   showP('results')
 }
