@@ -152,7 +152,9 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:36px 60px
 .r-tags{display:flex;flex-wrap:wrap;gap:4px}
 .r-tag{background:rgba(255,255,255,0.2);border:1px solid rgba(255,255,255,0.2);border-radius:20px;padding:2px 10px;font-size:10px;letter-spacing:0.06em;text-transform:uppercase;color:white}
 .r-analyse{background:var(--salmon-pale);border-left:3px solid var(--salmon-mid);padding:14px 16px;font-family:"Cormorant Garamond",serif;font-size:17px;font-weight:300;font-style:italic;color:var(--text2);line-height:1.65;margin-bottom:12px;border-radius:0 8px 8px 0}
-.r-conseil{background:var(--gold-pale);border:1px solid rgba(184,134,42,0.15);border-radius:8px;padding:12px 16px;font-size:12px;color:var(--text2);line-height:1.65;margin-bottom:20px}
+.r-conseil{background:#fff3f0;border-left:3px solid var(--salmon-mid);border-radius:0 8px 8px 0;padding:12px 16px;font-size:12px;color:var(--text2);line-height:1.65;margin-bottom:20px;font-weight:500}
+.p-bar-wrap{width:100%;height:3px;background:var(--border);border-radius:2px;margin-bottom:10px}
+.p-bar{height:3px;border-radius:2px}
 
 .tabs{display:flex;gap:4px;background:var(--bg);border-radius:30px;padding:4px;margin-bottom:18px}
 .tab{flex:1;background:transparent;border:none;border-radius:30px;padding:10px;font-size:11px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:var(--text4);cursor:pointer;font-family:"DM Sans",sans-serif;transition:all 0.2s}
@@ -390,6 +392,11 @@ function capture(){
   document.getElementById('prev').src=cap;document.getElementById('r-photo').src=cap;
   showP('choice')
 }
+function urgence(s){
+  if(s>=80)return{label:'Indispensable',color:'#e8896a'};
+  if(s>=60)return{label:'Très recommandé',color:'#c87830'};
+  return{label:'Recommandé',color:'#b8862a'};
+}
 function startAnalysis(mode){
   window._beauteMode=mode;
   const steps=mode==='maquillage'
@@ -438,8 +445,8 @@ function affLiens(nom,marque){var q=encodeURIComponent(nom+' '+marque);var sUrl=
 function showR(r){
   document.getElementById('r-tags').innerHTML=[r.profil.typePeau,r.profil.teint,r.profil.carnation,...(r.profil.particularites||[])].map(t=>`<span class="r-tag">${t}</span>`).join('');
   document.getElementById('r-analyse').textContent=r.analyse;
-  document.getElementById('r-conseil').innerHTML='✦ '+r.conseil;
-  document.getElementById('t-p').innerHTML=r.produits.map(p=>`<div class="p-card"><div class="p-cat">${p.categorie}</div><div class="p-nom">${p.nom}</div><div class="p-marque">${p.marque}</div><p class="p-raison">${p.raison}</p><div class="p-foot"><span class="p-prix">${p.prix}</span><span class="p-score">${p.score}% match</span></div>`+function(){var l=affLiens(p.nom,p.marque);return '<div class="p-links"><button class="p-btn p-btn-amazon" onclick="window.open(\''+l.amazon+'\',\'_blank\')">Amazon →</button><button class="p-btn p-btn-sephora" onclick="window.open(\''+l.sephora+'\',\'_blank\')">Sephora →</button></div>';}()+`</div>`).join('');
+  document.getElementById('r-conseil').innerHTML='⚠ Action prioritaire — '+r.conseil;
+  document.getElementById('t-p').innerHTML=(()=>{r.produits.sort((a,b)=>b.score-a.score);return r.produits.map(p=>{var u=urgence(p.score);var l=affLiens(p.nom,p.marque);return `<div class="p-card" style="border-top:3px solid ${u.color}"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px"><span style="font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:${u.color};font-weight:700">${u.label}</span><span style="font-size:10px;color:${u.color};font-weight:600">${p.score}/100</span></div><div class="p-bar-wrap"><div class="p-bar" style="width:${p.score}%;background:${u.color}"></div></div><div class="p-cat">${p.categorie}</div><div class="p-nom">${p.nom}</div><div class="p-marque">${p.marque}</div><p class="p-raison">${p.raison}</p><span class="p-prix">${p.prix}</span><div class="p-links"><button class="p-btn p-btn-amazon" onclick="window.open('`+l.amazon+`','_blank')">Amazon →</button><button class="p-btn p-btn-sephora" onclick="window.open('`+l.sephora+`','_blank')">Sephora →</button></div></div>`;}).join('')})();
   document.getElementById('t-r').innerHTML=[{l:'☀ Matin',s:r.routine.matin},{l:'◑ Soir',s:r.routine.soir}].map(({l,s})=>`<div class="r-card"><div class="r-t">${l}</div>${s.map((x,i)=>`<div class="r-step"><div class="r-n">${i+1}</div><span>${x}</span></div>`).join('')}</div>`).join('');
   showP('results')
 }
