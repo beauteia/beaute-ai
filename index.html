@@ -372,6 +372,7 @@ async function analyze(){
     const data=await res.json();
     if(!res.ok)throw new Error(data.error||'Erreur serveur');
     const r=JSON.parse(data.result.replace(/```json|```/g,'').trim());
+    if(r.erreur)throw new Error(r.erreur);
     showR(r)
   }catch(e){alert('Erreur : '+e.message);showP('camera');startCam()}
 }

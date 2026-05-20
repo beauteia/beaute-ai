@@ -24,7 +24,7 @@ exports.handler = async (event) => {
     const { image } = JSON.parse(event.body);
     const key = process.env.ANTHROPIC_KEY;
     const catalogueStr = JSON.stringify(CATALOGUE);
-    const prompt = `Tu es experte en dermatologie esthétique. Analyse ce visage et choisis 4 à 6 produits UNIQUEMENT dans ce catalogue: ${catalogueStr}. Utilise exactement les valeurs nom, marque, categorie, prix du catalogue. Retourne UNIQUEMENT un JSON valide sans markdown: {"profil":{"typePeau":"string","teint":"string","carnation":"string","particularites":["string"]},"analyse":"string","produits":[{"categorie":"string","nom":"string","marque":"string","raison":"string","prix":"string","score":0}],"routine":{"matin":["string"],"soir":["string"]},"conseil":"string"}`;
+    const prompt = `Tu es experte en dermatologie esthétique. Si l'image ne contient pas de visage humain clairement visible, retourne UNIQUEMENT: {"erreur":"Aucun visage détecté. Veuillez prendre une photo de face avec un bon éclairage."}. Sinon, analyse ce visage et choisis 4 à 6 produits UNIQUEMENT dans ce catalogue: ${catalogueStr}. Utilise exactement les valeurs nom, marque, categorie, prix du catalogue. Retourne UNIQUEMENT un JSON valide sans markdown: {"profil":{"typePeau":"string","teint":"string","carnation":"string","particularites":["string"]},"analyse":"string","produits":[{"categorie":"string","nom":"string","marque":"string","raison":"string","prix":"string","score":0}],"routine":{"matin":["string"],"soir":["string"]},"conseil":"string"}`;
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {"Content-Type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01"},
