@@ -472,7 +472,6 @@ function isSharp(dataUrl){
 }
 async function analyze(){
   const b64=cap.split(',')[1];
-  if(!(await isSharp(cap))){alert('Photo trop floue. Tenez l\'appareil stable et réessayez.');showP('camera');startCam();return;}
   try{
     const res=await fetch('/.netlify/functions/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:b64,mode:window._beauteMode||'skincare'})});
     const data=await res.json();
