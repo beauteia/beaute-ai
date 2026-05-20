@@ -1,4 +1,4 @@
-const CATALOGUE = [
+const CATALOGUE_SKINCARE = [
   {nom:"CeraVe Hydrating Cleanser",marque:"CeraVe",categorie:"Nettoyant",prix:"~15€"},
   {nom:"Toleriane Caring Wash",marque:"La Roche-Posay",categorie:"Nettoyant",prix:"~12€"},
   {nom:"CeraVe Moisturizing Cream",marque:"CeraVe",categorie:"Hydratant",prix:"~18€"},
@@ -26,16 +26,51 @@ const CATALOGUE = [
   {nom:"Taie d'oreiller en satin",marque:"Générique",categorie:"Accessoire anti-acné",prix:"~15€"}
 ];
 
+const CATALOGUE_MAKEUP = [
+  {nom:"Accord Parfait Foundation",marque:"L'Oréal Paris",categorie:"Fond de teint",prix:"~15€"},
+  {nom:"Fit Me Matte + Poreless Foundation",marque:"Maybelline",categorie:"Fond de teint",prix:"~13€"},
+  {nom:"Healthy Mix Foundation",marque:"Bourjois",categorie:"Fond de teint",prix:"~14€"},
+  {nom:"BB Cream 5-en-1",marque:"Garnier",categorie:"BB Cream",prix:"~10€"},
+  {nom:"Infaillible 32H Matte Cover Foundation",marque:"L'Oréal Paris",categorie:"Fond de teint",prix:"~16€"},
+  {nom:"Color Riche Lipstick",marque:"L'Oréal Paris",categorie:"Rouge à lèvres",prix:"~12€"},
+  {nom:"Color Sensational Lipstick",marque:"Maybelline",categorie:"Rouge à lèvres",prix:"~11€"},
+  {nom:"Soft Matte Lip Cream",marque:"NYX Professional",categorie:"Rouge à lèvres",prix:"~9€"},
+  {nom:"Kate Lipstick",marque:"Rimmel",categorie:"Rouge à lèvres",prix:"~10€"},
+  {nom:"La Petite Palette",marque:"L'Oréal Paris",categorie:"Fard à paupières",prix:"~14€"},
+  {nom:"The City Mini Palette",marque:"Maybelline",categorie:"Fard à paupières",prix:"~13€"},
+  {nom:"Ultimate Shadow Palette",marque:"NYX Professional",categorie:"Fard à paupières",prix:"~18€"},
+  {nom:"Sky High Mascara",marque:"Maybelline",categorie:"Mascara",prix:"~12€"},
+  {nom:"Telescopic Mascara",marque:"L'Oréal Paris",categorie:"Mascara",prix:"~14€"},
+  {nom:"Lash Princess Mascara",marque:"Essence",categorie:"Mascara",prix:"~5€"},
+  {nom:"Infaillible Concealer",marque:"L'Oréal Paris",categorie:"Correcteur",prix:"~12€"},
+  {nom:"Fit Me Concealer",marque:"Maybelline",categorie:"Correcteur",prix:"~10€"},
+  {nom:"True Match Blush",marque:"L'Oréal Paris",categorie:"Blush",prix:"~13€"},
+  {nom:"Baked Blush",marque:"Milani",categorie:"Blush",prix:"~15€"},
+  {nom:"Super Liner Perfect Slim",marque:"L'Oréal Paris",categorie:"Eyeliner",prix:"~11€"},
+  {nom:"Infaillible 24H Setting Powder",marque:"L'Oréal Paris",categorie:"Poudre fixante",prix:"~14€"},
+  {nom:"Stay Matte Pressed Powder",marque:"Rimmel",categorie:"Poudre fixante",prix:"~8€"},
+  {nom:"True Match Highlighter",marque:"L'Oréal Paris",categorie:"Enlumineur",prix:"~14€"},
+  {nom:"Dream Radiant Liquid Foundation",marque:"Maybelline",categorie:"Fond de teint",prix:"~12€"}
+];
+
 exports.handler = async (event) => {
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 200, headers: {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"Content-Type"}, body: "" };
   }
   try {
-    const { image } = JSON.parse(event.body);
+    const { image, mode } = JSON.parse(event.body);
     const key = process.env.ANTHROPIC_KEY;
-    const shuffled = [...CATALOGUE].sort(() => Math.random() - 0.5);
+    const isMakeup = mode === "maquillage";
+    const catalogue = isMakeup ? CATALOGUE_MAKEUP : CATALOGUE_SKINCARE;
+    const shuffled = [...catalogue].sort(() => Math.random() - 0.5);
     const catalogueStr = JSON.stringify(shuffled);
-    const prompt = `Tu es experte en dermatologie esthétique. Si l'image ne contient pas de visage humain clairement visible, retourne UNIQUEMENT: {"erreur":"Aucun visage détecté. Veuillez prendre une photo de face avec un bon éclairage."}. Sinon, analyse ce visage et choisis 4 à 6 produits UNIQUEMENT dans ce catalogue: ${catalogueStr}. Utilise exactement les valeurs nom, marque, categorie, prix du catalogue. Varie tes recommandations selon les besoins spécifiques détectés et ne propose pas systématiquement les mêmes produits. Retourne UNIQUEMENT un JSON valide sans markdown: {"profil":{"typePeau":"string","teint":"string","carnation":"string","particularites":["string"]},"analyse":"string","produits":[{"categorie":"string","nom":"string","marque":"string","raison":"string","prix":"string","score":0}],"routine":{"matin":["string"],"soir":["string"]},"conseil":"string"}`;
+    const erreur = '{"erreur":"Aucun visage détecté. Veuillez prendre une photo de face avec un bon éclairage."}';
+    const jsonSchema = '{"profil":{"typePeau":"string","teint":"string","carnation":"string","particularites":["string"]},"analyse":"string","produits":[{"categorie":"string","nom":"string","marque":"string","raison":"string","prix":"string","score":0}],"routine":{"matin":["string"],"soir":["string"]},"conseil":"string"}';
+
+    const prompt = isMakeup
+      ? `Tu es experte en maquillage et colorimétrie. Si l'image ne contient pas de visage humain clairement visible, retourne UNIQUEMENT: ${erreur}. Sinon, analyse le teint, la carnation et les traits de ce visage. Choisis 4 à 6 produits maquillage UNIQUEMENT dans ce catalogue: ${catalogueStr}. Adapte les recommandations au teint détecté (fond de teint, couleurs lèvres et yeux harmonieux avec la carnation). Utilise exactement les valeurs nom, marque, categorie, prix du catalogue. Varie tes recommandations. Retourne UNIQUEMENT un JSON valide sans markdown: ${jsonSchema}`
+      : `Tu es experte en dermatologie esthétique. Si l'image ne contient pas de visage humain clairement visible, retourne UNIQUEMENT: ${erreur}. Sinon, analyse ce visage et choisis 4 à 6 produits UNIQUEMENT dans ce catalogue: ${catalogueStr}. Utilise exactement les valeurs nom, marque, categorie, prix du catalogue. Varie tes recommandations selon les besoins spécifiques détectés. Retourne UNIQUEMENT un JSON valide sans markdown: ${jsonSchema}`;
+
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {"Content-Type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01"},

@@ -173,6 +173,12 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:36px 60px
 .p-links{display:flex;gap:6px;margin-top:6px}
 .p-btn-amazon:hover{border-color:#f90!important;color:#f90!important;background:white}
 .p-btn-sephora:hover{border-color:#000!important;color:#000!important;background:white}
+.choice-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:22px 0}
+.choice-card{background:var(--bg);border:1.5px solid var(--border);border-radius:14px;padding:22px 14px;cursor:pointer;transition:all 0.2s;text-align:center;font-family:"DM Sans",sans-serif;width:100%}
+.choice-card:hover,.choice-card.active{border-color:var(--salmon-mid);background:var(--salmon-pale);transform:translateY(-2px);box-shadow:0 8px 24px rgba(232,137,106,0.15)}
+.choice-icon{font-size:26px;margin-bottom:10px;color:var(--salmon-mid)}
+.choice-t{font-size:12px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--text);margin-bottom:6px}
+.choice-d{font-family:"Cormorant Garamond",serif;font-size:14px;font-weight:300;color:var(--text3);line-height:1.5}
 
 .r-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .r-card{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:18px}
@@ -312,6 +318,24 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:36px 60px
         <button class="mb-primary" id="scan-btn" onclick="startCD()" style="flex:2">✦ Analyser mon visage</button>
       </div>
     </div>
+    <div id="p-choice" class="hidden">
+      <div class="m-eyebrow">Votre objectif beauté</div>
+      <div class="m-title">Que souhaitez-vous ?</div>
+      <p class="m-sub">L'IA adapte ses recommandations à votre choix</p>
+      <div class="choice-grid">
+        <button class="choice-card" onclick="startAnalysis('skincare')">
+          <div class="choice-icon">✦</div>
+          <div class="choice-t">Skincare</div>
+          <p class="choice-d">Routine soin personnalisée, produits adaptés à votre type de peau</p>
+        </button>
+        <button class="choice-card" onclick="startAnalysis('maquillage')">
+          <div class="choice-icon">◆</div>
+          <div class="choice-t">Maquillage</div>
+          <p class="choice-d">Fond de teint, lèvres, yeux — sélectionnés selon votre carnation</p>
+        </button>
+      </div>
+      <button class="mb-ghost" style="width:100%;margin-top:4px" onclick="showP('camera');startCam()">← Reprendre la photo</button>
+    </div>
     <div id="p-analyzing" class="hidden">
       <img id="prev" class="an-photo" src="" alt="">
       <div class="an-wrap">
@@ -346,7 +370,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:36px 60px
 let stream=null,cap=null;
 function openModal(){document.getElementById('modalBg').classList.add('open');document.body.style.overflow='hidden';startCam()}
 function closeModal(){stop();document.getElementById('modalBg').classList.remove('open');document.body.style.overflow='';showP('camera')}
-function showP(n){['camera','analyzing','results'].forEach(p=>document.getElementById('p-'+p).classList.toggle('hidden',p!==n))}
+function showP(n){['camera','choice','analyzing','results'].forEach(p=>document.getElementById('p-'+p).classList.toggle('hidden',p!==n))}
 async function startCam(){
   try{stream=await navigator.mediaDevices.getUserMedia({video:{width:640,height:480,facingMode:'user'}});document.getElementById('video').srcObject=stream;document.getElementById('cam-err').classList.add('hidden')}
   catch(e){document.getElementById('cam-err').textContent="Impossible d'accéder à la caméra. Vérifiez les autorisations.";document.getElementById('cam-err').classList.remove('hidden')}
@@ -363,7 +387,15 @@ function capture(){
   cv.width=v.videoWidth||640;cv.height=v.videoHeight||480;cv.getContext('2d').drawImage(v,0,0);
   cap=cv.toDataURL('image/jpeg',0.85);stop();
   document.getElementById('prev').src=cap;document.getElementById('r-photo').src=cap;
-  showP('analyzing');analyze()
+  showP('choice')
+}
+function startAnalysis(mode){
+  window._beauteMode=mode;
+  const steps=mode==='maquillage'
+    ?['Analyse teint & carnation','Détection des sous-tons','Sélection des teintes','Composition de votre look']
+    :['Détection type de peau','Analyse teint & carnation','Sélection des produits','Création de votre routine'];
+  document.querySelectorAll('.an-step').forEach((el,i)=>{const d=el.querySelector('.an-dot');el.textContent='';if(d)el.appendChild(d);el.append(steps[i]||'');});
+  showP('analyzing');analyze();
 }
 function isSharp(dataUrl){
   return new Promise(resolve=>{
@@ -393,7 +425,7 @@ async function analyze(){
   const b64=cap.split(',')[1];
   if(!(await isSharp(cap))){alert('Photo trop floue. Tenez l\'appareil stable et réessayez.');showP('camera');startCam();return;}
   try{
-    const res=await fetch('/.netlify/functions/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:b64})});
+    const res=await fetch('/.netlify/functions/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({image:b64,mode:window._beauteMode||'skincare'})});
     const data=await res.json();
     if(!res.ok)throw new Error(data.error||'Erreur serveur');
     const r=JSON.parse(data.result.replace(/```json|```/g,'').trim());
