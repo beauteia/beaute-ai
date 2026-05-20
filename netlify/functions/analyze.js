@@ -13,7 +13,17 @@ const CATALOGUE = [
   {nom:"Skin Perfecting 2% BHA Liquid Exfoliant",marque:"Paula's Choice",categorie:"Exfoliant",prix:"~33€"},
   {nom:"Super Volcanic Pore Clay Mask",marque:"Innisfree",categorie:"Masque",prix:"~16€"},
   {nom:"Himalayan Charcoal Purifying Glow Mask",marque:"The Body Shop",categorie:"Masque",prix:"~20€"},
-  {nom:"Healing Ointment",marque:"CeraVe",categorie:"Baume lèvres",prix:"~10€"}
+  {nom:"Healing Ointment",marque:"CeraVe",categorie:"Baume lèvres",prix:"~10€"},
+  {nom:"Acne Pimple Master Patch",marque:"COSRX",categorie:"Patch anti-boutons",prix:"~9€"},
+  {nom:"Mighty Patch Original",marque:"Hero Cosmetics",categorie:"Patch anti-boutons",prix:"~13€"},
+  {nom:"Pure Konjac Sponge",marque:"The Body Shop",categorie:"Éponge nettoyante",prix:"~8€"},
+  {nom:"Brosse nettoyante silicone visage",marque:"Générique",categorie:"Outil nettoyant",prix:"~12€"},
+  {nom:"Filet moussant nettoyant visage",marque:"Générique",categorie:"Accessoire nettoyant",prix:"~5€"},
+  {nom:"Rouleau de jade visage",marque:"Générique",categorie:"Outil massage",prix:"~14€"},
+  {nom:"Gua Sha quartz rose",marque:"Générique",categorie:"Outil massage",prix:"~11€"},
+  {nom:"Patchs yeux hydrogel",marque:"Garnier",categorie:"Soin yeux",prix:"~10€"},
+  {nom:"Cotons démaquillants réutilisables bambou",marque:"Générique",categorie:"Accessoire démaquillage",prix:"~8€"},
+  {nom:"Taie d'oreiller en satin",marque:"Générique",categorie:"Accessoire anti-acné",prix:"~15€"}
 ];
 
 exports.handler = async (event) => {
