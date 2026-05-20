@@ -53,6 +53,22 @@ const CATALOGUE_MAKEUP = [
   {nom:"Dream Radiant Liquid Foundation",marque:"Maybelline",categorie:"Fond de teint",prix:"~12€"}
 ];
 
+async function fetchImg(nom, marque) {
+  try {
+    const q = encodeURIComponent(nom + ' ' + marque);
+    const res = await fetch(
+      `https://world.openbeautyfacts.org/cgi/search.pl?search_terms=${q}&search_simple=1&action=process&json=1&page_size=3`,
+      { signal: AbortSignal.timeout(2500) }
+    );
+    const data = await res.json();
+    for (const p of (data.products || [])) {
+      const img = p.image_front_small_url || p.image_small_url;
+      if (img) return img;
+    }
+  } catch {}
+  return null;
+}
+
 exports.handler = async (event) => {
   if (event.httpMethod === "OPTIONS") {
     return { statusCode: 200, headers: {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"Content-Type"}, body: "" };
@@ -82,7 +98,13 @@ exports.handler = async (event) => {
     });
     const data = await res.json();
     if (data.error) throw new Error(data.error.message);
-    const result = data.content[0].text;
+    const raw = data.content[0].text;
+    const r = JSON.parse(raw.replace(/```json|```/g, '').trim());
+    if (!r.erreur && r.produits) {
+      const imgs = await Promise.all(r.produits.map(p => fetchImg(p.nom, p.marque)));
+      r.produits.forEach((p, i) => { if (imgs[i]) p.img = imgs[i]; });
+    }
+    const result = JSON.stringify(r);
     return { statusCode: 200, headers: {"Access-Control-Allow-Origin":"*","Content-Type":"application/json"}, body: JSON.stringify({ result }) };
   } catch(e) {
     return { statusCode: 500, headers: {"Access-Control-Allow-Origin":"*"}, body: JSON.stringify({ error: e.message }) };
