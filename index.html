@@ -124,7 +124,11 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:36px 60px
 .cam-guide{position:absolute;inset:0;display:flex;align-items:center;justify-content:center}
 .face-oval{width:150px;height:190px;border:2px solid rgba(255,255,255,0.8);border-radius:50%;box-shadow:0 0 0 2000px rgba(0,0,0,0.3)}
 #cd{position:absolute;font-family:"Playfair Display",serif;font-size:72px;color:white;display:none}
-.cam-tip{font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text4);text-align:center;margin-bottom:18px}
+.cam-tip{font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text4);text-align:center;margin-bottom:8px}
+.q-bar{padding:7px 14px;border-radius:20px;font-size:11px;letter-spacing:0.08em;text-align:center;transition:all 0.35s;margin-bottom:10px;font-weight:500}
+.q-ok{background:rgba(60,180,60,0.08);color:#2e8a2e;border:1px solid rgba(60,180,60,0.25)}
+.q-bad{background:var(--salmon-pale);color:var(--salmon-mid);border:1px solid var(--salmon-light)}
+.q-wait{background:var(--bg);color:var(--text4);border:1px solid var(--border)}
 .cam-err{background:#fff0ea;border:1px solid var(--salmon-light);border-radius:8px;padding:10px 14px;color:var(--salmon-mid);font-size:12px;margin-bottom:12px}
 
 .mb-primary{width:100%;background:var(--salmon-mid);color:white;border:none;border-radius:30px;padding:14px;font-size:12px;letter-spacing:0.15em;text-transform:uppercase;cursor:pointer;font-family:"DM Sans",sans-serif;transition:all 0.2s;box-shadow:0 4px 16px rgba(232,137,106,0.3)}
@@ -319,7 +323,8 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:36px 60px
       <p class="m-sub">Bonne lumière naturelle recommandée</p>
       <div class="cam-box"><video id="video" autoplay playsinline muted></video><div class="cam-guide"><div class="face-oval"></div><div id="cd"></div></div></div>
       <canvas id="canvas" style="display:none"></canvas>
-      <p class="cam-tip">Alignez votre visage dans l'ovale</p>
+      <p class="cam-tip">Centrez votre visage dans l'ovale</p>
+      <div id="q-bar" class="q-bar q-wait">⌛ Initialisation caméra…</div>
       <div id="cam-err" class="cam-err hidden"></div>
       <div class="mb-row">
         <button class="mb-ghost" onclick="closeModal()">Annuler</button>
@@ -379,11 +384,42 @@ let stream=null,cap=null;
 function openModal(){document.getElementById('modalBg').classList.add('open');document.body.style.overflow='hidden';startCam()}
 function closeModal(){stop();document.getElementById('modalBg').classList.remove('open');document.body.style.overflow='';showP('camera')}
 function showP(n){['camera','choice','analyzing','results'].forEach(p=>document.getElementById('p-'+p).classList.toggle('hidden',p!==n))}
+let qTimer=null;
+function liveQuality(){
+  const v=document.getElementById('video');
+  if(!v||!v.srcObject||v.videoWidth===0)return;
+  const sz=120,cv=document.createElement('canvas');
+  cv.width=cv.height=sz;
+  const ctx=cv.getContext('2d');
+  ctx.drawImage(v,(v.videoWidth-sz)/2,(v.videoHeight-sz)/2,sz,sz,0,0,sz,sz);
+  const px=ctx.getImageData(0,0,sz,sz).data;
+  let lum=0;
+  for(let i=0;i<px.length;i+=4)lum+=0.299*px[i]+0.587*px[i+1]+0.114*px[i+2];
+  lum/=(sz*sz);
+  const g=[];
+  for(let i=0;i<px.length;i+=4)g.push(0.299*px[i]+0.587*px[i+1]+0.114*px[i+2]);
+  let s=0,s2=0,n=0;
+  for(let y=1;y<sz-1;y++){for(let x=1;x<sz-1;x++){
+    const idx=y*sz+x,l=-4*g[idx]+g[idx-1]+g[idx+1]+g[idx-sz]+g[idx+sz];
+    s+=l;s2+=l*l;n++;
+  }}
+  const sharp=s2/n-Math.pow(s/n,2);
+  const bar=document.getElementById('q-bar');
+  const btn=document.getElementById('scan-btn');
+  let msg,cls,ok;
+  if(lum<45){msg='💡 Trop sombre — rapprochez une lumière';cls='q-bad';ok=false;}
+  else if(lum>230){msg='☀️ Surexposé — évitez la lumière directe';cls='q-bad';ok=false;}
+  else if(sharp<50){msg='📷 Image floue — stabilisez l\'appareil';cls='q-bad';ok=false;}
+  else{msg='✦ Qualité parfaite — prêt pour l\'analyse';cls='q-ok';ok=true;}
+  if(bar){bar.textContent=msg;bar.className='q-bar '+cls;}
+  if(btn&&!btn.disabled)btn.disabled=!ok;
+  if(btn&&ok)btn.disabled=false;
+}
 async function startCam(){
-  try{stream=await navigator.mediaDevices.getUserMedia({video:{width:640,height:480,facingMode:'user'}});document.getElementById('video').srcObject=stream;document.getElementById('cam-err').classList.add('hidden')}
+  try{stream=await navigator.mediaDevices.getUserMedia({video:{width:640,height:480,facingMode:'user'}});document.getElementById('video').srcObject=stream;document.getElementById('cam-err').classList.add('hidden');if(qTimer)clearInterval(qTimer);qTimer=setInterval(liveQuality,600);}
   catch(e){document.getElementById('cam-err').textContent="Impossible d'accéder à la caméra. Vérifiez les autorisations.";document.getElementById('cam-err').classList.remove('hidden')}
 }
-function stop(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}}
+function stop(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}if(qTimer){clearInterval(qTimer);qTimer=null;}}
 function startCD(){
   const btn=document.getElementById('scan-btn');btn.disabled=true;
   const cd=document.getElementById('cd');cd.style.display='block';
